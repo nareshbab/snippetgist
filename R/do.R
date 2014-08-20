@@ -17,6 +17,22 @@ auth.url.snippetcontext <- function(redirect, ctx) {
          "&scope=gist,user:email")
 }
 
+access.token.snippetcontext <- function(query, ctx) {
+  #state <- fromJSON(URLdecode(query["state"]))
+  result <- Rstash::POST(paste(rcloud.config("github.base.url"), "login/oauth/access_token", sep=''),
+                 config=accept_json(),
+                 body=list(
+                   client_id=ctx$client_id,
+                   client_secret=ctx$client_secret,
+                   code=query["code"]))
+  l <- list(token=Rstash::content(result)$access_token)
+  #if (is.character(ret <- state$redirect) && length(ret) && nzchar(ret[1L]))
+   # l$redirect <- ret[1L]
+  l
+}
+
+context.info.snippetcontext <- function(ctx) list(username=ctx$user$login)
+
 get.gist.snippetcontext <- Rstash::get.gist
 
 fork.gist.snippetcontext <- Rstash::fork.gist
