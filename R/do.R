@@ -10,15 +10,19 @@ create.gist.context <- function(username, token, github.api.url, github.client.i
 
 auth.url.snippetcontext <- function(redirect, ctx) {
   state <- list(nonce=rnorm(1), redirect=as.vector(redirect))
-  vals <- authenticate.sni(ctx$client_id, ctx$client_secret, ctx$github.base.url)
-  paste0(ctx$github.base.url,
-         "plugins/servlet/oauth/authorize?oauth_token=", vals["oauth_token"],
-         "&state=",URLencode(toJSON(state), TRUE),
-         "&scope=gist,user:email")
+  res <- verify.token(ctx$token, ctx$client_id, ctx$client_secret, ctx$api_url)
+  if(res$status == "error") {
+    vals <- authenticate.sni(ctx$client_id, ctx$client_secret, ctx$github.base.url)
+    paste0(ctx$github.base.url,
+           "plugins/servlet/oauth/authorize?oauth_token=", vals["oauth_token"],
+           "&state=",URLencode(toJSON(state), TRUE),
+           "&scope=gist,user:email")
+  } else {
+    paste0("/edit.html")
+  }
 }
 
 access.token.snippetcontext <- function(query, ctx) {
-  #state <- fromJSON(URLdecode(query["state"]))
   result <- Rstash::POST(paste(rcloud.config("github.base.url"), "login/oauth/access_token", sep=''),
                  config=accept_json(),
                  body=list(
@@ -26,8 +30,6 @@ access.token.snippetcontext <- function(query, ctx) {
                    client_secret=ctx$client_secret,
                    code=query["code"]))
   l <- list(token=Rstash::content(result)$access_token)
-  #if (is.character(ret <- state$redirect) && length(ret) && nzchar(ret[1L]))
-   # l$redirect <- ret[1L]
   l
 }
 
